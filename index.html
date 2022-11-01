@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,700;1,500;1,900&display=swap" rel="stylesheet"> 
+    <style>
+        body{
+            background: #ccc;
+            font-family: 'Roboto', sans-serif;
+        }
+        .img{
+            height: 40px;
+            width: 40px;
+            border-radius: 50%;
+
+        }
+        /* .chat-item{
+            align-items: center;
+        } */
+        .message{
+            background-color: #ccc;
+            padding-left: 10px;
+            padding-right: 10px;
+            padding-top: 5px;
+            padding-top: 5px;
+            border-radius: 10px;
+        }
+        .chatSender .message{
+            background-color: #7215ff;
+            color: white;
+        }
+        .chatSender .message p{
+            color: white;
+        }
+        .message h5 {
+            font-size: 16px;
+            margin-bottom: 0;
+            font-weight: 400;
+        }
+        .message p {
+            font-size: 14px;
+            margin-bottom: 0;
+            color: rgb(73, 69, 69);
+            font-weight: 400;
+        }
+
+        .chat-box .chat_box_item:last-child{
+            animation: mesg 0.3s;
+        }
+        @keyframes mesg {
+            0%{
+                transform: translate(0px, 40px);
+                opacity: 0;
+            }
+            100%{
+                transform: translate(0px, 0px);
+                opacity: 1;
+            }
+        }
+ 
+    </style>
+</head>
+<body>
+    <!-- <h1 id="title"></h1>
+    <hr>
+    <input id="msg" type="text"> -->
+
+    <audio id="notification" src="/messenger_chat_sound.mp3"></audio>
+    <div class="container my-3">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <div id="chat_box" class="chat-box">
+
+                            
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="input-group">
+                            <input id="name" type="text" class="form-control" placeholder="Name">
+                            <input id="photo" type="text" class="form-control" placeholder="Photo">
+                            <input id="message" type="text" class="form-control" placeholder="Message">
+                            <button id="send" class="btn btn-info">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('latestChat', (data, sender) => {
+
+            const chat_name = localStorage.getItem('chat-name');
+            const chat_photo = localStorage.getItem('chat-photo');
+
+            if(chat_name){
+                document.getElementById('name').value = chat_name
+            }
+            if(chat_photo){
+                document.getElementById('photo').value = chat_photo
+            }
+
+            console.log(sender);
+
+            let chat = '';
+            data.forEach(item => {
+                if(chat_name !== item.name){
+                    
+                    chat += `
+                    <div class="chat_box_item chatMember">
+                        <div class="chat-item d-flex alain-item-center mb-2">
+                            <img class="img mr-2" src="${item.photo}" alt="">
+                            <div class="message">
+                                <h5>${item.name}</h5>
+                                <p>${item.msg}</p>
+                            </div>
+                        </div>
+                    </div>
+                
+                `;
+                }else if(chat_name == item.name){
+                    
+                    chat += `
+                        <div class="chat_box_item chatSender mb-2">
+                            <div class="chat-item d-flex alain-item-center justify-content-end ">
+                                <div class="message">
+                                    <h5>${item.name}</h5>
+                                    <p>${item.msg}</p>
+                                </div>
+                                <img  class="img ml-2" src="${item.photo}" alt="">
+
+                            </div>
+                        </div>
+                    `;
+                }
+                
+            });
+
+            document.getElementById('chat_box').innerHTML = chat
+
+            if(sender !== chat_name ){
+
+                if(sender){ // extra for geting a undefined value
+                    document.getElementById('notification').play()
+                }
+  
+            }
+
+        }) 
+
+        // 005
+
+        document.getElementById('send').onclick = (e) => {
+            let name = document.getElementById('name').value;
+            let photo = document.getElementById('photo').value;
+            let msg = document.getElementById('message').value;
+            
+            let data = {
+                name, photo, msg 
+            }
+
+            // send name to LS
+            if(!localStorage.getItem('chat-name')){
+                localStorage.setItem('chat-name', name)
+            }
+            if(!localStorage.getItem('chat-photo')){
+                localStorage.setItem('chat-photo', photo)
+            }
+
+            // send data to server
+            socket.emit('chat', {name, photo, msg})
+            // clear message filed
+
+            document.getElementById('message').value = ''
+            
+        }
+
+
+
+    </script>
+</body>
+</html>
